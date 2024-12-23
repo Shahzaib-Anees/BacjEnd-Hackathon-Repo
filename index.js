@@ -10,7 +10,7 @@ dotenv.config();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
-app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/user", userRoutes);
 
 (async () => {
   try {
