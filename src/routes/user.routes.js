@@ -3,7 +3,9 @@ import {
   getSingleUser,
   loginUser,
   logOutUser,
+  refreshAccessToken,
   registerUser,
+  sentVerificationCode,
   uploadImageToDB,
 } from "../controllers/user.controllers.js";
 import { authenticateUser } from "../middlewares/authentication.middleware.js";
@@ -15,6 +17,8 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/:id", getSingleUser);
 router.post("/uploadImage/:id", upload.single("image"), uploadImageToDB);
+router.post("/refresh-token", authenticateUser, refreshAccessToken);
+router.post("/sentCode", sentVerificationCode);
 router.post("/logout", logOutUser);
 
 export default router;

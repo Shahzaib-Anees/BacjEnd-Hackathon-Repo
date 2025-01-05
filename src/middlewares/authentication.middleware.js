@@ -1,4 +1,6 @@
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
 // authenticate user middleware
 const authenticateUser = async (req, res, next) => {
   const token = req.headers["authorization"];

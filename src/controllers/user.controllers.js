@@ -6,6 +6,8 @@ import {
 } from "../methods/Methods.js";
 import userSchema from "../models/user.model.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { transporter } from "../configs/nodemailer.configs.js";
 
 const registerUser = async (req, res) => {
   const { email, password } = req.body;
@@ -99,4 +101,115 @@ const uploadImageToDB = async (req, res) => {
       .json({ message: "Error occured while uploading image to database" });
   }
 };
-export { registerUser, loginUser, getSingleUser, logOutUser  , uploadImageToDB};
+// refreh access token
+const refreshAccessToken = async (req, res) => {
+  const { refreshToken } = req.cookie;
+  if (!refreshToken)
+    return res.status(400).json({
+      message: "Refresh token is required",
+    });
+
+  const isValidRefrehToken = jwt.verify(
+    refreshToken,
+    process.env.JWT_REFRESH_TOKEN_SECRET
+  );
+  if (!isValidRefrehToken)
+    return res.status(401).json({
+      message: "Invalid refresh token",
+    });
+  const user = await schemaForUser.findOne({ email: isValidRefrehToken.email });
+  if (!user)
+    return res.status(404).json({
+      message: "No account found",
+    });
+
+  const accessToken = generateAccessToken(user);
+  return res.status(200).json({
+    message: "Access token refreshed",
+    accessToken,
+  });
+};
+
+// forgot Password
+const sentVerificationCode = async (req, res) => {
+  const { email, type } = req.body;
+  if (!email)
+    return res.status(400).json({
+      message: "Email is required",
+    });
+
+  if (!type)
+    return res.status(400).json({
+      message: "Type is required",
+    });
+
+  const user = await schemaForUser.findOne({ email: email });
+  if (!user)
+    return res.status(404).json({
+      message: "No account found with this email",
+    });
+
+  const existingVerificationCode = await schemaForVerify.findOne({
+    userId: user._id,
+  });
+
+  if (existingVerificationCode) {
+    return res.status(400).json({
+      message: "Verification code already sent",
+    });
+  }
+
+  const code = generateCode();
+  const codeInDb = await schemaForVerify.create({
+    userId: user._id,
+    verificationCode: code,
+  });
+
+  setTimeout(async () => {
+    await schemaForVerify.findOneAndDelete({ _id: codeInDb._id });
+  }, 60000);
+
+  // Email Design for Email Verification
+  const info = await transporter.sendMail({
+    from: `"ChatBox Team 👻" <${process.env.MY_EMAIL_ADDRESS}>`,
+    to: `${email}`,
+    subject: "Verify Your Email for ChatBox",
+    html: `${
+      type === "email_verification"
+        ? `
+     <h3>Dear ${user.username},</h3>
+      <p>Thank you for registering with <strong>ChatBox</strong>! To complete your registration and activate your account, please enter the verification code provided below:</p>
+      <p><strong>Verification Code: ${code}</strong></p>
+      <p>This code will expire in <strong>1 minute</strong>. If you did not request this verification, please disregard this email.</p>
+      <p>If you need further assistance, feel free to reach out to us at mohammadshahzaib046@gmail.com.</p>
+      <br>
+      <p>Welcome to the community,</p>
+      <p>The <strong>ChatBox</strong> Team</p>`
+        : ` <div style="font-family: Arial, sans-serif; color: #333;">
+        <h2>Your Verification Code</h2>
+        <p>Dear ${user.username},</p>
+        <p>Your verification code for accessing <strong>ChatBox</strong> is:</p>
+        <p><strong style="font-size: 20px;">${code}</strong></p>
+        <p>This code is valid for 5 minutes. If you didn’t request this, please ignore this email.</p>
+        <p>Best regards,<br>The Your Chat App Team</p>
+      </div>`
+    }`,
+  });
+
+  res.status(200).json({
+    message: "Email sent",
+    code: codeInDb,
+  });
+};
+
+// verify Code is pending
+
+export {
+  registerUser,
+  loginUser,
+  getSingleUser,
+  logOutUser,
+  uploadImageToDB,
+  refreshAccessToken,
+  sentVerificationCode,
+};
