@@ -4,8 +4,8 @@ import { createOrder, getOrders, getSingleOrder } from "../controllers/order.con
 
 const router = express.Router();
 
-router.post("/orders", authenticateUser, createOrder);
-router.get("/orders", authenticateUser, getOrders)
-router.get("/orders/:id", authenticateUser, getSingleOrder);
+router.post("/", authenticateUser, createOrder);
+router.get("/", authenticateUser, getOrders)
+router.get("/:id", authenticateUser, getSingleOrder);
 
 export default router;

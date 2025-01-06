@@ -17,7 +17,7 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/:id", getSingleUser);
 router.post("/uploadImage/:id", upload.single("image"), uploadImageToDB);
-router.post("/refresh-token", authenticateUser, refreshAccessToken);
+router.post("/refresh-token", refreshAccessToken);
 router.post("/sentCode", sentVerificationCode);
 router.post("/logout", logOutUser);
 

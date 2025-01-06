@@ -1,13 +1,20 @@
 import express from "express";
-import { createProduct, deleteProduct, getProducts, getSingleProduct, updateProduct } from "../controllers/product.controlers.js";
+import {
+  createProduct,
+  deleteProduct,
+  getProducts,
+  getSingleProduct,
+  updateProduct,
+} from "../controllers/product.controlers.js";
 import { authenticateUser } from "../middlewares/authentication.middleware.js";
+import { upload } from "../middlewares/multer.middlerware.js";
 
 const router = express.Router();
 
-router.post("/create", upload.single("image"), authenticateUser, createProduct);
-router.get("/products", getProducts);
-router.get("/products/:id", getSingleProduct)
-router.put("/products/:id", authenticateUser, updateProduct)
-router.delete("/products/:id", authenticateUser, deleteProduct);
+router.post("/", upload.single("image"), authenticateUser, createProduct);
+router.get("/", getProducts);
+router.get("/:id", getSingleProduct);
+router.put("/:id", authenticateUser, updateProduct);
+router.delete("/:id", authenticateUser, deleteProduct);
 
-export default router
+export default router;

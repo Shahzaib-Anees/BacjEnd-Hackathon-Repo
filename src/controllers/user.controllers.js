@@ -10,7 +10,8 @@ import jwt from "jsonwebtoken";
 import { transporter } from "../configs/nodemailer.configs.js";
 
 const registerUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { name, email, password } = req.body;
+  if (!name) return res.status(400).json({ message: "Name is required" });
   if (!email) return res.status(400).json({ message: "Email is required" });
   if (!password)
     return res.status(400).json({ message: "Password is required" });
@@ -18,7 +19,11 @@ const registerUser = async (req, res) => {
   const ifExistingUser = await userSchema.findOne({ email });
   if (ifExistingUser)
     return res.status(400).json({ message: "User already exists" });
-  const newUser = await userSchema.create({ email, password });
+  const newUser = await userSchema.create({
+    username: name,
+    email: email,
+    password: password,
+  });
   const accessToken = generateAccessToken(newUser);
   const refreshToken = generateRefreshToken(newUser);
   res.cookie("refreshToken", refreshToken, {
@@ -32,18 +37,20 @@ const registerUser = async (req, res) => {
     to: `${email}`,
     subject: "Welcoming Note for Ecommerce Store",
     html: `
-    <h3>Dear ${user.username},</h3>
+    <h3>Dear ${name},</h3>
       <p>Thank you for registering with <strong>Ecommerce Store</strong>!</p>
       <p>If you need further assistance, feel free to reach out to us at mohammadshahzaib046@gmail.com.</p>
       <br>
       <p>Welcome to the community,</p>
       <p>The <strong>Ecommerce Store</strong> Team</p>,
-  `});
+  `,
+  });
 
   res.status(201).json({
     message: "User created successfully",
     data: newUser,
     ACCESS_TOKEN: accessToken,
+    REFRESH_TOKEN: refreshToken,
   });
 };
 
@@ -70,6 +77,7 @@ const loginUser = async (req, res) => {
     message: "User logged in successfully",
     data: user,
     ACCESS_TOKEN: accessToken,
+    REFRESH_TOKEN: refreshToken,
   });
 };
 
@@ -117,31 +125,40 @@ const uploadImageToDB = async (req, res) => {
 };
 // refreh access token
 const refreshAccessToken = async (req, res) => {
-  const { refreshToken } = req.cookie;
-  if (!refreshToken)
-    return res.status(400).json({
-      message: "Refresh token is required",
-    });
+  try {
+    const { refreshToken } = req.cookies;
+    if (!refreshToken)
+      return res.status(400).json({
+        message: "Refresh token is required",
+      });
 
-  const isValidRefrehToken = jwt.verify(
-    refreshToken,
-    process.env.JWT_REFRESH_TOKEN_SECRET
-  );
-  if (!isValidRefrehToken)
-    return res.status(401).json({
-      message: "Invalid refresh token",
+    const isValidRefrehToken = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_TOKEN_SECRET
+    );
+    if (!isValidRefrehToken)
+      return res.status(401).json({
+        message: "Invalid refresh token",
+      });
+    const user = await userSchema.findOne({
+      email: isValidRefrehToken.email,
     });
-  const user = await schemaForUser.findOne({ email: isValidRefrehToken.email });
-  if (!user)
-    return res.status(404).json({
-      message: "No account found",
-    });
+    if (!user)
+      return res.status(404).json({
+        message: "No account found",
+      });
 
-  const accessToken = generateAccessToken(user);
-  return res.status(200).json({
-    message: "Access token refreshed",
-    accessToken,
-  });
+    const accessToken = generateAccessToken(user);
+    return res.status(200).json({
+      message: "Access token refreshed",
+      ACCESS_TOKEN: accessToken,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error while refreshing token",
+      error: error.message,
+    });
+  }
 };
 
 // forgot Password
@@ -157,7 +174,7 @@ const sentVerificationCode = async (req, res) => {
       message: "Type is required",
     });
 
-  const user = await schemaForUser.findOne({ email: email });
+  const user = await userSchema.findOne({ email: email });
   if (!user)
     return res.status(404).json({
       message: "No account found with this email",
@@ -188,8 +205,9 @@ const sentVerificationCode = async (req, res) => {
     from: `"Ecommerce Store Team 👻" < ${process.env.MY_EMAIL_ADDRESS} > `,
     to: `${email}`,
     subject: "Verify Your Email for ChatBox",
-    html: `${type === "email_verification"
-      ? `
+    html: `${
+      type === "email_verification"
+        ? `
      <h3>Dear ${user.username},</h3>
       <p>Thank you for registering with <strong>Ecommerce Store</strong>! To complete your registration and activate your account, please enter the verification code provided below:</p>
       <p><strong>Verification Code: ${code}</strong></p>
@@ -198,7 +216,7 @@ const sentVerificationCode = async (req, res) => {
       <br>
       <p>Welcome to the community,</p>
       <p>The <strong>Ecommerce Store</strong> Team</p>`
-      : ` <div style="font-family: Arial, sans-serif; color: #333;">
+        : ` <div style="font-family: Arial, sans-serif; color: #333;">
         <h2>Your Verification Code</h2>
         <p>Dear ${user.username},</p>
         <p>Your verification code for accessing <strong>ChatBox</strong> is:</p>
@@ -206,7 +224,7 @@ const sentVerificationCode = async (req, res) => {
         <p>This code is valid for 5 minutes. If you didn’t request this, please ignore this email.</p>
         <p>Best regards,<br>The Your Ecommerce Store Team</p>
       </div>`
-      }`,
+    }`,
   });
 
   res.status(200).json({

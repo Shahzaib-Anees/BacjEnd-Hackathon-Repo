@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
-      unique: true,
     },
     email: {
       type: String,
@@ -17,20 +16,22 @@ const userSchema = new mongoose.Schema(
       required: [true, "Password is required"],
     },
     role: {
-      enum: ["admin", "user"]
+      type: String,
+      enum: ["admin", "user"],
+      default: "user",
     },
     products: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Product"
-      }
+        ref: "Product",
+      },
     ],
     orders: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Order"
-      }
-    ]
+        ref: "Order",
+      },
+    ],
   },
   {
     timestamps: true,
