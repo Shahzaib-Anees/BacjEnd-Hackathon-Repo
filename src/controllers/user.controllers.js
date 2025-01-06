@@ -168,5 +168,4 @@ export {
   logOutUser,
   uploadImageToDB,
   refreshAccessToken,
-  sentVerificationCode,
 };
