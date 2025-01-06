@@ -26,6 +26,20 @@ const registerUser = async (req, res) => {
     secure: false,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
+
+  const info = await transporter.sendMail({
+    from: `"Ecommerce Store Team 👻" <${process.env.MY_EMAIL_ADDRESS}>`,
+    to: `${email}`,
+    subject: "Welcoming Note for Ecommerce Store",
+    html: `
+    <h3>Dear ${user.username},</h3>
+      <p>Thank you for registering with <strong>Ecommerce Store</strong>!</p>
+      <p>If you need further assistance, feel free to reach out to us at mohammadshahzaib046@gmail.com.</p>
+      <br>
+      <p>Welcome to the community,</p>
+      <p>The <strong>Ecommerce Store</strong> Team</p>,
+  `});
+
   res.status(201).json({
     message: "User created successfully",
     data: newUser,
@@ -171,29 +185,28 @@ const sentVerificationCode = async (req, res) => {
 
   // Email Design for Email Verification
   const info = await transporter.sendMail({
-    from: `"ChatBox Team 👻" <${process.env.MY_EMAIL_ADDRESS}>`,
+    from: `"Ecommerce Store Team 👻" < ${process.env.MY_EMAIL_ADDRESS} > `,
     to: `${email}`,
     subject: "Verify Your Email for ChatBox",
-    html: `${
-      type === "email_verification"
-        ? `
+    html: `${type === "email_verification"
+      ? `
      <h3>Dear ${user.username},</h3>
-      <p>Thank you for registering with <strong>ChatBox</strong>! To complete your registration and activate your account, please enter the verification code provided below:</p>
+      <p>Thank you for registering with <strong>Ecommerce Store</strong>! To complete your registration and activate your account, please enter the verification code provided below:</p>
       <p><strong>Verification Code: ${code}</strong></p>
       <p>This code will expire in <strong>1 minute</strong>. If you did not request this verification, please disregard this email.</p>
       <p>If you need further assistance, feel free to reach out to us at mohammadshahzaib046@gmail.com.</p>
       <br>
       <p>Welcome to the community,</p>
-      <p>The <strong>ChatBox</strong> Team</p>`
-        : ` <div style="font-family: Arial, sans-serif; color: #333;">
+      <p>The <strong>Ecommerce Store</strong> Team</p>`
+      : ` <div style="font-family: Arial, sans-serif; color: #333;">
         <h2>Your Verification Code</h2>
         <p>Dear ${user.username},</p>
         <p>Your verification code for accessing <strong>ChatBox</strong> is:</p>
         <p><strong style="font-size: 20px;">${code}</strong></p>
         <p>This code is valid for 5 minutes. If you didn’t request this, please ignore this email.</p>
-        <p>Best regards,<br>The Your Chat App Team</p>
+        <p>Best regards,<br>The Your Ecommerce Store Team</p>
       </div>`
-    }`,
+      }`,
   });
 
   res.status(200).json({
